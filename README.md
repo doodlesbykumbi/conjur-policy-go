@@ -5,11 +5,11 @@ The general goal is to be able to represent Conjur policy as objects in Go, and 
 For this Go representation:
 
 ```go
-policy := PolicyDocument{
+policy := PolicyBody{
   Policy{
    Id:    "dev",
    Owner: UserRef("admin"),
-   Body: []interface{}{
+   Body: PolicyBody{
     Group{
      Id:    "bar",
      Owner: UserRef("foo"),
@@ -23,7 +23,7 @@ policy := PolicyDocument{
   Policy{
    Owner: UserRef("admin"),
    Id:    "pcf/prod",
-   Body: []interface{}{
+   Body: PolicyBody{
     Group{
      Id:    "bar",
      Owner: UserRef("foo"),
@@ -37,7 +37,7 @@ policy := PolicyDocument{
  }
 ```
 
-Outputs this YAML:
+Outputs this YAML (and vice-versa):
 
 ```yaml
 - !policy

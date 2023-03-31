@@ -2,136 +2,42 @@ package main
 
 import (
 	"fmt"
-	"reflect"
+
+	conjurpolicy "github.com/doodlesbykumbi/conjur-policy-go/pkg/conjurpolicy"
 
 	"gopkg.in/yaml.v3"
 )
 
-// copyWithoutMethods avoids infinite recursion when marshaling
-func copyWithoutMethods(in interface{}) interface{} {
-	t := reflect.TypeOf(in)
-	if t.Kind() != reflect.Struct {
-		return nil
-	}
-
-	// Create a new type that embeds the original struct type
-	// but with no methods.
-	fields := make([]reflect.StructField, 0, t.NumField())
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		if field.Type.Kind() == reflect.Func {
-			continue // skip methods
-		}
-		fields = append(fields, field)
-	}
-	newType := reflect.StructOf(fields)
-
-	// Create a new value of the new type and set its fields to the
-	// values of the original value.
-	inValue := reflect.ValueOf(in)
-	newValue := reflect.New(newType).Elem()
-	for i := 0; i < newType.NumField(); i++ {
-		newValue.Field(i).Set(inValue.FieldByName(newType.Field(i).Name))
-	}
-
-	return newValue.Interface()
-}
-
-type UserRef string
-
-func (u UserRef) MarshalYAML() (interface{}, error) {
-	return &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: string(u),
-		Tag:   "!user",
-		Style: yaml.TaggedStyle,
-	}, nil
-}
-
-type Group struct {
-	Id    string  `yaml:"id"`
-	Owner UserRef `yaml:"owner"`
-}
-
-func (g Group) MarshalYAML() (interface{}, error) {
-	data := copyWithoutMethods(g)
-
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
-	}
-	node.Tag = "!group"
-	node.Style = yaml.TaggedStyle
-
-	return node, nil
-}
-
-type User struct {
-	Id    string  `yaml:"id"`
-	Owner UserRef `yaml:"owner"`
-}
-
-func (u User) MarshalYAML() (interface{}, error) {
-	data := copyWithoutMethods(u)
-
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
-	}
-	node.Tag = "!user"
-	node.Style = yaml.TaggedStyle
-
-	return node, nil
-}
-
-type PolicyDocument []interface{}
-
-type Policy struct {
-	Id    string        `yaml:"id"`
-	Owner UserRef       `yaml:"owner"`
-	Body  []interface{} `yaml:"body"`
-}
-
-func (p Policy) MarshalYAML() (interface{}, error) {
-	data := copyWithoutMethods(p)
-
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
-	}
-	node.Tag = "!policy"
-	node.Style = yaml.TaggedStyle
-
-	return node, nil
-}
-
-func main() {
-	policy := PolicyDocument{
-		Policy{
+func marshal() {
+	policy := conjurpolicy.PolicyBody{
+		conjurpolicy.Policy{
 			Id:    "dev",
-			Owner: UserRef("admin"),
+			Owner: conjurpolicy.UserRef("admin"),
+			Annotations: conjurpolicy.Annotations{
+				"foo": "bar",
+			},
 			Body: []interface{}{
-				Group{
+				conjurpolicy.Group{
 					Id:    "bar",
-					Owner: UserRef("foo"),
+					Owner: conjurpolicy.UserRef("foo"),
 				},
-				User{
+				conjurpolicy.User{
 					Id:    "foo",
-					Owner: UserRef("admin"),
+					Owner: conjurpolicy.UserRef("admin"),
 				},
 			},
 		},
-		Policy{
-			Owner: UserRef("admin"),
+		conjurpolicy.Policy{
+			Owner: conjurpolicy.UserRef("admin"),
 			Id:    "pcf/prod",
 			Body: []interface{}{
-				Group{
+				conjurpolicy.Group{
 					Id:    "bar",
-					Owner: UserRef("foo"),
+					Owner: conjurpolicy.UserRef("foo"),
 				},
-				User{
+				conjurpolicy.User{
 					Id:    "foo",
-					Owner: UserRef("admin"),
+					Owner: conjurpolicy.UserRef("admin"),
 				},
 			},
 		},
@@ -141,5 +47,32 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(string(data))
+	fmt.Printf("unmarshaled:\n%+v\n", string(data))
+}
+
+func unmarshal() {
+	var p conjurpolicy.PolicyBody
+	err := yaml.Unmarshal([]byte(`
+- !policy
+  id: dev
+  owner: !user admin
+  annotations:
+    foo: bar
+  body:
+    - !group
+      id: bar
+      owner: !user foo
+    - !user
+      id: foo
+      owner: !user admin
+`), &p)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("unmarshaled:\n%+v\n", p)
+}
+
+func main() {
+	marshal()
+	unmarshal()
 }

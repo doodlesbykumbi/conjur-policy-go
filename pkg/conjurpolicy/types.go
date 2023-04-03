@@ -1,17 +1,104 @@
 package conjurpolicy
 
-import "gopkg.in/yaml.v3"
+import (
+	"reflect"
+
+	"gopkg.in/yaml.v3"
+)
+
+type Resource interface {
+	unused() // to prevent Resource from being used as a type
+}
+
+type Kind string
+
+const (
+	PolicyKind   Kind = "policy"
+	VariableKind Kind = "variable"
+	UserKind     Kind = "user"
+	GroupKind    Kind = "group"
+)
+
+func (t Kind) String() string {
+	return string(t)
+}
+
+func (t Kind) Tag() string {
+	return "!" + t.String()
+}
 
 func UserRef(id string) ResourceRef {
 	return ResourceRef{
 		Id:   id,
-		Kind: "user",
+		Kind: UserKind,
 	}
 }
 
+// copyStructWithoutMethods avoids infinite recursion when marshaling
+func copyStructWithoutMethods(in interface{}) interface{} {
+	t := reflect.TypeOf(in)
+	if t.Kind() != reflect.Struct {
+		return nil
+	}
+
+	// Create a new type that embeds the original struct type
+	// but with no methods.
+	fields := make([]reflect.StructField, 0, t.NumField())
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if field.Type.Kind() == reflect.Func {
+			continue // skip methods
+		}
+		fields = append(fields, field)
+	}
+	newType := reflect.StructOf(fields)
+
+	// Create a new value of the new type and set its fields to the
+	// values of the original value.
+	inValue := reflect.ValueOf(in)
+	newValue := reflect.New(newType).Elem()
+	for i := 0; i < newType.NumField(); i++ {
+		newValue.Field(i).Set(inValue.FieldByName(newType.Field(i).Name))
+	}
+
+	return newValue.Interface()
+}
+
+func MarshalYAMLWithTag[T Resources](v T, kind Kind) (interface{}, error) {
+	data := copyStructWithoutMethods(v)
+
+	node := &yaml.Node{Kind: yaml.MappingNode}
+	if err := node.Encode(&data); err != nil {
+		return nil, err
+	}
+	node.Tag = kind.Tag()
+	node.Style = yaml.TaggedStyle
+	return node, nil
+}
+
+type Resources interface {
+	Policy | Variable | User | Group
+}
+
+func (p Policy) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(p, PolicyKind)
+}
+
+func (v Variable) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(v, VariableKind)
+}
+
+func (u User) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(u, UserKind)
+}
+
+func (g Group) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(g, GroupKind)
+}
+
 type ResourceRef struct {
-	Id   string
-	Kind string
+	Id   string `yaml:"id"`
+	Kind Kind
 }
 
 func (r *ResourceRef) UnmarshalYAML(value *yaml.Node) error {
@@ -21,7 +108,7 @@ func (r *ResourceRef) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	r.Id = id
-	r.Kind = value.Tag[1:]
+	r.Kind = Kind(value.Tag[1:])
 
 	return nil
 }
@@ -30,131 +117,82 @@ func (r ResourceRef) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{
 		Kind:  yaml.ScalarNode,
 		Value: r.Id,
-		Tag:   "!" + r.Kind,
+		Tag:   r.Kind.Tag(),
 		Style: yaml.TaggedStyle,
 	}, nil
 }
 
 type Group struct {
+	Resource    `yaml:"-"`
 	Id          string      `yaml:"id"`
 	Annotations Annotations `yaml:"annotations,omitempty"`
 	Owner       ResourceRef `yaml:"owner,omitempty"`
-}
-
-func (g Group) MarshalYAML() (interface{}, error) {
-	type aliasType Group
-	data := (aliasType)(g)
-
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
-	}
-	node.Tag = "!group"
-	node.Style = yaml.TaggedStyle
-
-	return node, nil
 }
 
 type Annotations map[string]string
 
 type Variable struct {
+	Resource    `yaml:"-"`
 	Id          string      `yaml:"id"`
 	Annotations Annotations `yaml:"annotations,omitempty"`
 	Kind        string      `yaml:"kind,omitempty"`
 }
 
-func (v Variable) MarshalYAML() (interface{}, error) {
-	type aliasType Variable
-	data := (aliasType)(v)
-
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
-	}
-	node.Tag = "!variable"
-	node.Style = yaml.TaggedStyle
-
-	return node, nil
-}
-
 type User struct {
+	Resource    `yaml:"-"`
 	Id          string      `yaml:"id"`
 	Owner       ResourceRef `yaml:"owner,omitempty"`
 	Annotations Annotations `yaml:"annotations,omitempty"`
 }
 
-func (u User) MarshalYAML() (interface{}, error) {
-	type aliasType User
-	data := (aliasType)(u)
+type PolicyStatements []Resource
 
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
-	}
-	node.Tag = "!user"
-	node.Style = yaml.TaggedStyle
+func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
+	statements := []Resource{}
+	for _, node := range value.Content {
+		var statement Resource
 
-	return node, nil
-}
-
-type PolicyBody []interface{}
-
-func (pb *PolicyBody) UnmarshalYAML(value *yaml.Node) error {
-	things := []interface{}{}
-	for _, innerNode := range value.Content {
-		var thing interface{}
-		switch innerNode.Tag {
-		case "!policy":
+		switch node.Tag {
+		case PolicyKind.Tag():
 			var policy Policy
-			if err := innerNode.Decode(&policy); err != nil {
+			if err := node.Decode(&policy); err != nil {
 				return err
 			}
-			thing = policy
-		case "!group":
+
+			statement = policy
+		case GroupKind.Tag():
 			var group Group
-			if err := innerNode.Decode(&group); err != nil {
+			if err := node.Decode(&group); err != nil {
 				return err
 			}
-			thing = group
-		case "!user":
+
+			statement = group
+		case UserKind.Tag():
 			var user User
-			if err := innerNode.Decode(&user); err != nil {
+			if err := node.Decode(&user); err != nil {
 				return err
 			}
-			thing = user
-		case "!variable":
+			statement = user
+		case VariableKind.Tag():
 			var variable Variable
-			if err := innerNode.Decode(&variable); err != nil {
+			if err := node.Decode(&variable); err != nil {
 				return err
 			}
-			thing = variable
+			statement = variable
 		}
 
-		things = append(things, thing)
+		statements = append(statements, statement)
 	}
 
-	*pb = PolicyBody(things)
+	*s = statements
 
 	return nil
 }
 
 type Policy struct {
-	Id          string      `yaml:"id"`
-	Annotations Annotations `yaml:"annotations,omitempty"`
-	Owner       ResourceRef `yaml:"owner,omitempty"`
-	Body        PolicyBody  `yaml:"body,omitempty"`
-}
-
-func (p Policy) MarshalYAML() (interface{}, error) {
-	type aliasType Policy
-	data := (aliasType)(p)
-
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
-	}
-	node.Tag = "!policy"
-	node.Style = yaml.TaggedStyle
-
-	return node, nil
+	Resource    `yaml:"-"`
+	Id          string           `yaml:"id"`
+	Annotations Annotations      `yaml:"annotations,omitempty"`
+	Owner       ResourceRef      `yaml:"owner,omitempty"`
+	Body        PolicyStatements `yaml:"body,omitempty"`
 }

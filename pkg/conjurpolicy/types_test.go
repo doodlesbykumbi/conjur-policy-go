@@ -54,7 +54,7 @@ owner: !user test-owner
 			name: "policy-with-body",
 			policy: Policy{
 				Id: "policy-with-body",
-				Body: PolicyBody{
+				Body: PolicyStatements{
 					User{
 						Id: "test-user",
 					},

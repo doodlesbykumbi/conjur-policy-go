@@ -9,14 +9,14 @@ import (
 )
 
 func marshal() {
-	policy := conjurpolicy.PolicyBody{
+	policy := conjurpolicy.PolicyStatements{
 		conjurpolicy.Policy{
 			Id:    "dev",
 			Owner: conjurpolicy.UserRef("admin"),
 			Annotations: conjurpolicy.Annotations{
 				"foo": "bar",
 			},
-			Body: []interface{}{
+			Body: conjurpolicy.PolicyStatements{
 				conjurpolicy.Group{
 					Id:    "bar",
 					Owner: conjurpolicy.UserRef("foo"),
@@ -30,7 +30,7 @@ func marshal() {
 		conjurpolicy.Policy{
 			Owner: conjurpolicy.UserRef("admin"),
 			Id:    "pcf/prod",
-			Body: []interface{}{
+			Body: conjurpolicy.PolicyStatements{
 				conjurpolicy.Group{
 					Id:    "bar",
 					Owner: conjurpolicy.UserRef("foo"),
@@ -51,14 +51,20 @@ func marshal() {
 }
 
 func unmarshal() {
-	var p conjurpolicy.PolicyBody
+	var p conjurpolicy.PolicyStatements
 	err := yaml.Unmarshal([]byte(`
 - !policy
   id: dev
-  owner: !user admin
+  owner: !user /admin
   annotations:
     foo: bar
   body:
+    - !policy
+      id: /inner
+      body:
+      - !group
+        id: bar
+        owner: !user foo
     - !group
       id: bar
       owner: !user foo
@@ -69,7 +75,9 @@ func unmarshal() {
 	if err != nil {
 		panic(err)
 	}
+
 	fmt.Printf("unmarshaled:\n%+v\n", p)
+
 }
 
 func main() {

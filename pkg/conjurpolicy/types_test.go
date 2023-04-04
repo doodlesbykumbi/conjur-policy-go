@@ -108,7 +108,7 @@ body:
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, string(actual))
 
-			// Unmarsha;
+			// Unmarshal
 			var policy Policy
 			err = yaml.Unmarshal([]byte(tc.expected), &policy)
 			assert.NoError(t, err)
@@ -141,7 +141,7 @@ record: !host test-host
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, string(actual))
 
-			// Unmarsha;
+			// Unmarshal
 			var policy Delete
 			err = yaml.Unmarshal([]byte(tc.expected), &policy)
 			assert.NoError(t, err)

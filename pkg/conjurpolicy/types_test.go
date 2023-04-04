@@ -116,3 +116,36 @@ body:
 		})
 	}
 }
+
+func TestDeleteMarshalUnmarshal(t *testing.T) {
+	testCases := []struct {
+		name     string
+		policy   Delete
+		expected string
+	}{
+		{
+			name: "delete-policy",
+			policy: Delete{
+				Record: HostRef("test-host"),
+			},
+			expected: `!delete
+record: !host test-host
+`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Marshal
+			actual, err := yaml.Marshal(tc.policy)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, string(actual))
+
+			// Unmarsha;
+			var policy Delete
+			err = yaml.Unmarshal([]byte(tc.expected), &policy)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.policy, policy)
+		})
+	}
+}

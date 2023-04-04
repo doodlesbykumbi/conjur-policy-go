@@ -78,6 +78,26 @@ body:
       id: test-variable
       kind: text
 `,
+		}, {
+			name: "policy-with-layer",
+			policy: Policy{
+				Id: "policy-with-body",
+				Body: PolicyStatements{
+					Layer{},
+					Grant{
+						Role:   LayerRef(""),
+						Member: LayerRef("test-layer"),
+					},
+				},
+			},
+			expected: `!policy
+id: policy-with-body
+body:
+    - !layer
+    - !grant
+      role: !layer
+      member: !layer test-layer
+`,
 		},
 	}
 

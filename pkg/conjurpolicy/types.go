@@ -17,6 +17,8 @@ const (
 	VariableKind Kind = "variable"
 	UserKind     Kind = "user"
 	GroupKind    Kind = "group"
+	LayerKind    Kind = "layer"
+	GrantKind    Kind = "grant"
 )
 
 func (t Kind) String() string {
@@ -31,6 +33,13 @@ func UserRef(id string) ResourceRef {
 	return ResourceRef{
 		Id:   id,
 		Kind: UserKind,
+	}
+}
+
+func LayerRef(id string) ResourceRef {
+	return ResourceRef{
+		Id:   id,
+		Kind: LayerKind,
 	}
 }
 
@@ -67,9 +76,15 @@ func copyStructWithoutMethods(in interface{}) interface{} {
 func MarshalYAMLWithTag[T Resources](v T, kind Kind) (interface{}, error) {
 	data := copyStructWithoutMethods(v)
 
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
+	node := &yaml.Node{}
+	switch kind {
+	case LayerKind:
+		node.Kind = yaml.ScalarNode
+	default:
+		node.Kind = yaml.MappingNode
+		if err := node.Encode(&data); err != nil {
+			return nil, err
+		}
 	}
 	node.Tag = kind.Tag()
 	node.Style = yaml.TaggedStyle
@@ -77,7 +92,7 @@ func MarshalYAMLWithTag[T Resources](v T, kind Kind) (interface{}, error) {
 }
 
 type Resources interface {
-	Policy | Variable | User | Group
+	Policy | Variable | User | Group | Layer | Grant
 }
 
 func (p Policy) MarshalYAML() (interface{}, error) {
@@ -94,6 +109,14 @@ func (u User) MarshalYAML() (interface{}, error) {
 
 func (g Group) MarshalYAML() (interface{}, error) {
 	return MarshalYAMLWithTag(g, GroupKind)
+}
+
+func (l Layer) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(l, LayerKind)
+}
+
+func (g Grant) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(g, GrantKind)
 }
 
 type ResourceRef struct {
@@ -158,7 +181,6 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 			if err := node.Decode(&policy); err != nil {
 				return err
 			}
-
 			statement = policy
 		case GroupKind.Tag():
 			var group Group
@@ -179,8 +201,16 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				return err
 			}
 			statement = variable
+		case LayerKind.Tag():
+			var layer Layer
+			statement = layer
+		case GrantKind.Tag():
+			var grant Grant
+			if err := node.Decode(&grant); err != nil {
+				return err
+			}
+			statement = grant
 		}
-
 		statements = append(statements, statement)
 	}
 
@@ -195,4 +225,14 @@ type Policy struct {
 	Annotations Annotations      `yaml:"annotations,omitempty"`
 	Owner       ResourceRef      `yaml:"owner,omitempty"`
 	Body        PolicyStatements `yaml:"body,omitempty"`
+}
+
+type Layer struct {
+	Resource `yaml:"-"`
+}
+
+type Grant struct {
+	Resource `yaml:"-"`
+	Role     ResourceRef `yaml:"role"`
+	Member   ResourceRef `yaml:"member"`
 }

@@ -17,6 +17,10 @@ const (
 	VariableKind Kind = "variable"
 	UserKind     Kind = "user"
 	GroupKind    Kind = "group"
+	LayerKind    Kind = "layer"
+	GrantKind    Kind = "grant"
+	HostKind     Kind = "host"
+	DeleteKind   Kind = "delete"
 )
 
 func (t Kind) String() string {
@@ -31,6 +35,20 @@ func UserRef(id string) ResourceRef {
 	return ResourceRef{
 		Id:   id,
 		Kind: UserKind,
+	}
+}
+
+func LayerRef(id string) ResourceRef {
+	return ResourceRef{
+		Id:   id,
+		Kind: LayerKind,
+	}
+}
+
+func HostRef(id string) ResourceRef {
+	return ResourceRef{
+		Id:   id,
+		Kind: HostKind,
 	}
 }
 
@@ -67,9 +85,15 @@ func copyStructWithoutMethods(in interface{}) interface{} {
 func MarshalYAMLWithTag[T Resources](v T, kind Kind) (interface{}, error) {
 	data := copyStructWithoutMethods(v)
 
-	node := &yaml.Node{Kind: yaml.MappingNode}
-	if err := node.Encode(&data); err != nil {
-		return nil, err
+	node := &yaml.Node{}
+	switch kind {
+	case LayerKind:
+		node.Kind = yaml.ScalarNode
+	default:
+		node.Kind = yaml.MappingNode
+		if err := node.Encode(&data); err != nil {
+			return nil, err
+		}
 	}
 	node.Tag = kind.Tag()
 	node.Style = yaml.TaggedStyle
@@ -77,7 +101,7 @@ func MarshalYAMLWithTag[T Resources](v T, kind Kind) (interface{}, error) {
 }
 
 type Resources interface {
-	Policy | Variable | User | Group
+	Policy | Variable | User | Group | Layer | Grant | Host | Delete
 }
 
 func (p Policy) MarshalYAML() (interface{}, error) {
@@ -94,6 +118,22 @@ func (u User) MarshalYAML() (interface{}, error) {
 
 func (g Group) MarshalYAML() (interface{}, error) {
 	return MarshalYAMLWithTag(g, GroupKind)
+}
+
+func (l Layer) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(l, LayerKind)
+}
+
+func (g Grant) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(g, GrantKind)
+}
+
+func (h Host) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(h, HostKind)
+}
+
+func (d Delete) MarshalYAML() (interface{}, error) {
+	return MarshalYAMLWithTag(d, DeleteKind)
 }
 
 type ResourceRef struct {
@@ -158,7 +198,6 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 			if err := node.Decode(&policy); err != nil {
 				return err
 			}
-
 			statement = policy
 		case GroupKind.Tag():
 			var group Group
@@ -179,8 +218,28 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				return err
 			}
 			statement = variable
+		case LayerKind.Tag():
+			var layer Layer
+			statement = layer
+		case GrantKind.Tag():
+			var grant Grant
+			if err := node.Decode(&grant); err != nil {
+				return err
+			}
+			statement = grant
+		case HostKind.Tag():
+			var host Host
+			if err := node.Decode(&host); err != nil {
+				return err
+			}
+			statement = host
+		case DeleteKind.Tag():
+			var delete Delete
+			if err := node.Decode(&delete); err != nil {
+				return err
+			}
+			statement = delete
 		}
-
 		statements = append(statements, statement)
 	}
 
@@ -195,4 +254,27 @@ type Policy struct {
 	Annotations Annotations      `yaml:"annotations,omitempty"`
 	Owner       ResourceRef      `yaml:"owner,omitempty"`
 	Body        PolicyStatements `yaml:"body,omitempty"`
+}
+
+type Layer struct {
+	Resource `yaml:"-"`
+}
+
+type Grant struct {
+	Resource `yaml:"-"`
+	Role     ResourceRef `yaml:"role"`
+	Member   ResourceRef `yaml:"member"`
+}
+
+type Host struct {
+	Resource    `yaml:"-"`
+	Id          string            `yaml:"id"`
+	Owner       ResourceRef       `yaml:"owner,omitempty"`
+	Body        PolicyStatements  `yaml:"body,omitempty"`
+	Annotations map[string]string `yaml:"annotations,omitempty"`
+}
+
+type Delete struct {
+	Resource `yaml:"-"`
+	Record   ResourceRef `yaml:"record"`
 }

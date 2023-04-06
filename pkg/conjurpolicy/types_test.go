@@ -1,16 +1,17 @@
 package conjurpolicy
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
 
-func TestPolicyMarshalUnmarshal(t *testing.T) {
+func TestResourceMarshalUnmarshal(t *testing.T) {
 	testCases := []struct {
 		name     string
-		policy   Policy
+		policy   Resource
 		expected string
 	}{
 		{
@@ -20,6 +21,41 @@ func TestPolicyMarshalUnmarshal(t *testing.T) {
 			},
 			expected: `!policy
 id: empty-policy
+`,
+		},
+		{
+			name: "delete-policy",
+			policy: Delete{
+				Record: HostRef("test-host"),
+			},
+			expected: `!delete
+record: !host test-host
+`,
+		},
+		{
+			name: "permit",
+			policy: Permit{
+				Role:       HostRef("/test-host"),
+				Privileges: []Privilege{PrivilegeRead},
+				Resources:  VariableRef("test-variable"),
+			},
+			expected: `!permit
+role: !host /test-host
+privileges: [read]
+resource: !variable test-variable
+`,
+		},
+		{
+			name: "deny",
+			policy: Deny{
+				Role:       HostRef("/test-host"),
+				Privileges: []Privilege{PrivilegeCreate, PrivilegeExecute},
+				Resources:  VariableRef("test-variable"),
+			},
+			expected: `!deny
+role: !host /test-host
+privileges: [create, execute]
+resource: !variable test-variable
 `,
 		},
 		{
@@ -42,7 +78,7 @@ annotations:
 				Id: "policy-with-owner",
 				Owner: ResourceRef{
 					Id:   "test-owner",
-					Kind: "user",
+					Kind: KindUser,
 				},
 			},
 			expected: `!policy
@@ -109,43 +145,11 @@ body:
 			assert.Equal(t, tc.expected, string(actual))
 
 			// Unmarshal
-			var policy Policy
-			err = yaml.Unmarshal([]byte(tc.expected), &policy)
+			policy := reflect.New(reflect.TypeOf(tc.policy)).Elem()
+			// https://github.com/go-yaml/yaml/issues/769
+			err = yaml.Unmarshal([]byte(tc.expected), policy.Addr().Interface())
 			assert.NoError(t, err)
-			assert.Equal(t, tc.policy, policy)
-		})
-	}
-}
-
-func TestDeleteMarshalUnmarshal(t *testing.T) {
-	testCases := []struct {
-		name     string
-		policy   Delete
-		expected string
-	}{
-		{
-			name: "delete-policy",
-			policy: Delete{
-				Record: HostRef("test-host"),
-			},
-			expected: `!delete
-record: !host test-host
-`,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Marshal
-			actual, err := yaml.Marshal(tc.policy)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expected, string(actual))
-
-			// Unmarshal
-			var policy Delete
-			err = yaml.Unmarshal([]byte(tc.expected), &policy)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.policy, policy)
+			assert.Equal(t, tc.policy, policy.Interface())
 		})
 	}
 }

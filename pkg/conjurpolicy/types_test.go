@@ -1,7 +1,6 @@
 package conjurpolicy
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,84 +10,86 @@ import (
 func TestResourceMarshalUnmarshal(t *testing.T) {
 	testCases := []struct {
 		name     string
-		policy   Resource
+		policy   PolicyStatements
 		expected string
 	}{
 		{
-			name: "empty-policy",
-			policy: Policy{
-				Id: "empty-policy",
-			},
-			expected: `!policy
-id: empty-policy
+			name:   "empty-policy",
+			policy: PolicyStatements{Policy{Id: "empty-policy"}},
+			expected: `- !policy
+  id: empty-policy
 `,
 		},
 		{
-			name: "delete-policy",
-			policy: Delete{
-				Record: HostRef("test-host"),
-			},
-			expected: `!delete
-record: !host test-host
+			name:   "delete-policy",
+			policy: PolicyStatements{Delete{Record: HostRef("test-host")}},
+			expected: `- !delete
+  record: !host test-host
 `,
 		},
 		{
 			name: "permit",
-			policy: Permit{
+			policy: PolicyStatements{Permit{
 				Role:       HostRef("/test-host"),
 				Privileges: []Privilege{PrivilegeRead},
 				Resources:  VariableRef("test-variable"),
-			},
-			expected: `!permit
-role: !host /test-host
-privileges: [read]
-resource: !variable test-variable
+			}},
+			expected: `- !permit
+  role: !host /test-host
+  privileges: [read]
+  resource: !variable test-variable
 `,
 		},
 		{
 			name: "deny",
-			policy: Deny{
+			policy: PolicyStatements{Deny{
 				Role:       HostRef("/test-host"),
 				Privileges: []Privilege{PrivilegeCreate, PrivilegeExecute},
 				Resources:  VariableRef("test-variable"),
-			},
-			expected: `!deny
-role: !host /test-host
-privileges: [create, execute]
-resource: !variable test-variable
+			}},
+			expected: `- !deny
+  role: !host /test-host
+  privileges: [create, execute]
+  resource: !variable test-variable
+`,
+		},
+		{
+			name:   "empty-host",
+			policy: PolicyStatements{Host{}},
+			expected: `- !host
 `,
 		},
 		{
 			name: "policy-with-annotations",
-			policy: Policy{
+			policy: PolicyStatements{Policy{
 				Id: "policy-with-annotations",
 				Annotations: Annotations{
 					"description": "this is a test policy",
 				},
-			},
-			expected: `!policy
-id: policy-with-annotations
-annotations:
+			}},
+			expected: `- !policy
+  id: policy-with-annotations
+  annotations:
     description: this is a test policy
 `,
 		},
 		{
 			name: "policy-with-owner",
-			policy: Policy{
+			policy: PolicyStatements{Policy{
 				Id: "policy-with-owner",
 				Owner: ResourceRef{
 					Id:   "test-owner",
 					Kind: KindUser,
 				},
-			},
-			expected: `!policy
-id: policy-with-owner
-owner: !user test-owner
+			}},
+			expected: `- !policy
+  id: policy-with-owner
+  owner: !user test-owner
 `,
 		},
 		{
 			name: "policy-with-body",
-			policy: Policy{
+			policy: PolicyStatements{Policy{
 				Id: "policy-with-body",
 				Body: PolicyStatements{
 					User{
@@ -102,10 +103,10 @@ owner: !user test-owner
 						Kind: "text",
 					},
 				},
-			},
-			expected: `!policy
-id: policy-with-body
-body:
+			}},
+			expected: `- !policy
+  id: policy-with-body
+  body:
     - !user
       id: test-user
     - !group
@@ -116,7 +117,7 @@ body:
 `,
 		}, {
 			name: "policy-with-layer",
-			policy: Policy{
+			policy: PolicyStatements{Policy{
 				Id: "policy-with-body",
 				Body: PolicyStatements{
 					Layer{},
@@ -125,10 +126,10 @@ body:
 						Member: LayerRef("test-layer"),
 					},
 				},
-			},
-			expected: `!policy
-id: policy-with-body
-body:
+			}},
+			expected: `- !policy
+  id: policy-with-body
+  body:
     - !layer
     - !grant
       role: !layer
@@ -145,11 +146,10 @@ body:
 			assert.Equal(t, tc.expected, string(actual))
 
 			// Unmarshal
-			policy := reflect.New(reflect.TypeOf(tc.policy)).Elem()
-			// https://github.com/go-yaml/yaml/issues/769
-			err = yaml.Unmarshal([]byte(tc.expected), policy.Addr().Interface())
+			var policy PolicyStatements
+			err = yaml.Unmarshal([]byte(tc.expected), &policy)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.policy, policy.Interface())
+			assert.Equal(t, tc.policy, policy)
 		})
 	}
 }

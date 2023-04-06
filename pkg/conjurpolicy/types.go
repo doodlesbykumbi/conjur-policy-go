@@ -55,7 +55,7 @@ type Grant struct {
 
 type Host struct {
 	Resource    `yaml:"-"`
-	Id          string            `yaml:"id"`
+	Id          string            `yaml:"id,omitempty"`
 	Owner       ResourceRef       `yaml:"owner,omitempty"`
 	Body        PolicyStatements  `yaml:"body,omitempty"`
 	Annotations map[string]string `yaml:"annotations,omitempty"`
@@ -83,7 +83,7 @@ type Deny struct {
 type PolicyStatements []Resource
 
 func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
-	statements := []Resource{}
+	var statements []Resource
 	for _, node := range value.Content {
 		var statement Resource
 
@@ -99,7 +99,6 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 			if err := node.Decode(&group); err != nil {
 				return err
 			}
-
 			statement = group
 		case KindUser.Tag():
 			var user User
@@ -124,8 +123,10 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 			statement = grant
 		case KindHost.Tag():
 			var host Host
-			if err := node.Decode(&host); err != nil {
-				return err
+			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if err := node.Decode(&host); err != nil {
+					return err
+				}
 			}
 			statement = host
 		case KindDelete.Tag():

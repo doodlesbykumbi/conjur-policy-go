@@ -40,14 +40,17 @@ func MarshalYAMLWithTag[T Resources](v T, kind Kind) (interface{}, error) {
 	data := copyStructWithoutMethods(v)
 
 	node := &yaml.Node{}
-	if allFieldsEmpty(v) {
-		node.Kind = yaml.ScalarNode
-	} else {
-		node.Kind = yaml.MappingNode
-		if err := node.Encode(&data); err != nil {
-			return nil, err
-		}
+	node.Kind = yaml.MappingNode
+	if err := node.Encode(&data); err != nil {
+		return nil, err
 	}
+
+        // Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
+        // when the resource struct is empty!
+	if len(node.Content) == 0 {
+		node.Kind = yaml.ScalarNode
+	}
+
 	node.Tag = kind.Tag()
 	node.Style = yaml.TaggedStyle
 	return node, nil

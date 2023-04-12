@@ -55,14 +55,3 @@ func MarshalYAMLWithTag[T Resources](v T, kind Kind) (interface{}, error) {
 	node.Style = yaml.TaggedStyle
 	return node, nil
 }
-
-func allFieldsEmpty(r interface{}) bool {
-	v := reflect.ValueOf(r)
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		if !reflect.DeepEqual(f.Interface(), reflect.Zero(f.Type()).Interface()) {
-			return false
-		}
-	}
-	return true
-}

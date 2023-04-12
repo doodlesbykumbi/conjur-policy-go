@@ -1,6 +1,6 @@
 package conjurpolicy
 
-//go:generate go run github.com/dmarkham/enumer -type Kind -trimprefix Kind -transform lower -text -output kind.gen.go
+//go:generate enumer -type Kind -trimprefix Kind -transform lower -text -output kind.gen.go
 
 type Kind int
 

@@ -45,8 +45,8 @@ func MarshalYAMLWithTag[T Resources](v T, kind Kind) (interface{}, error) {
 		return nil, err
 	}
 
-        // Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
-        // when the resource struct is empty!
+	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
+	// when the resource struct is empty!
 	if len(node.Content) == 0 {
 		node.Kind = yaml.ScalarNode
 	}

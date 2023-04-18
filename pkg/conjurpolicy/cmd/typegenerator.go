@@ -24,13 +24,8 @@ func generate(inputType interface{}) {
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
 		v := strings.ToLower(field.Name)[:1]
-		cases = append(cases, Case(Id("Kind"+field.Name+".Tag()")).Block(
-			Var().Id(strings.ToLower(field.Name)).Id(field.Name),
-			If(Id("err").Op(":=").Id("node.Decode").Call(Id("&"+strings.ToLower(field.Name))), Id("err").Op("!=").Nil().Block(
-				Return(Id("err")),
-			)),
-			Id("statement").Op("=").Id(strings.ToLower(field.Name)),
-		))
+
+		// MarshalYAML function generation
 		f.Func().Params(
 			Id(v).Id(field.Name),
 		).Id("MarshalYAML").Params().Params(
@@ -39,9 +34,33 @@ func generate(inputType interface{}) {
 		).Block(
 			Return(Id("MarshalYAMLWithTag").Call(Id(v), Id("Kind"+field.Name))),
 		).Empty()
+
+		// Prepare cases for UnmarshalYAML (decoding is skipped for Layer type)
+		if field.Name == conjurpolicy.KindLayer.String() {
+			cases = append(cases, Case(Id("Kind"+field.Name+".Tag()")).Block(
+				Var().Id(strings.ToLower(field.Name)).Id(field.Name),
+				Id("statement").Op("=").Id(strings.ToLower(field.Name)),
+			))
+		} else {
+			cases = append(cases, Case(Id("Kind"+field.Name+".Tag()")).Block(
+				Var().Id(strings.ToLower(field.Name)).Id(field.Name),
+				If(Id("len").Call(Id("node.Value")).Op(">").Id("0").Op("||").Id(
+					"len").Call(Id("node.Content")).Op(">").Id("0").Block(
+					If(Id("err").Op(":=").Id("node.Decode").Call(Id("&"+strings.ToLower(field.Name))), Id("err").Op("!=").Nil().Block(
+						Return(Id("err")),
+					)),
+				)),
+				Id("statement").Op("=").Id(strings.ToLower(field.Name)),
+			))
+		}
 	}
 
-	f.Func().Params(Id("s *PolicyStatements")).Id("UnmarshalYAML").Params(Id("value *yaml.Node")).Params(Error()).Block(
+	// UnmarshalYAML function generation
+	f.Func().Params(
+		Id("s *PolicyStatements"),
+	).Id("UnmarshalYAML").Params(
+		Id("value").Op("*").Qual("gopkg.in/yaml.v3", "Node"),
+	).Params(Error()).Block(
 		Var().Id("statements").Id("[]Resource"),
 		For(
 			Id("_, ").Id("node").Op(":=").Range().Id("value.Content").Block(
@@ -53,6 +72,7 @@ func generate(inputType interface{}) {
 		Id("*s").Op("=").Id("statements"),
 		Return(Nil()),
 	)
+
 	goFile := os.Getenv("GOFILE")
 	ext := filepath.Ext(goFile)
 	baseFilename := goFile[0 : len(goFile)-len(ext)]

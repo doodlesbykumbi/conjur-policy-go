@@ -12,6 +12,20 @@ type Resources interface {
 	Policy | Variable | User | Group | Layer | Grant | Host | Delete | Permit | Deny
 }
 
+//go:generate go run .\cmd\typegenerator.go -type Resources2
+type Resources2 struct {
+	Policy
+	Variable
+	User
+	Group
+	Layer
+	Grant
+	Host
+	Delete
+	Permit
+	Deny
+}
+
 type Group struct {
 	Resource    `yaml:"-"`
 	Id          string      `yaml:"id"`

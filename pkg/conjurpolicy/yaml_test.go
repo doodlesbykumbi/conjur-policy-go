@@ -14,6 +14,18 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 		expected string
 	}{
 		{
+			name:   "nil",
+			policy: nil,
+			expected: `[]
+`,
+		},
+		{
+			name:   "empty",
+			policy: PolicyStatements{},
+			expected: `[]
+`,
+		},
+		{
 			name:   "empty-policy",
 			policy: PolicyStatements{Policy{Id: "empty-policy"}},
 			expected: `- !policy

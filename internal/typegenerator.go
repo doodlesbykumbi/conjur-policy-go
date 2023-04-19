@@ -1,3 +1,6 @@
+//go:build tools
+// +build tools
+
 package main
 
 import (
@@ -32,15 +35,27 @@ func generate(inputType interface{}) {
 			Interface(),
 			Error(),
 		).Block(
-			Return(Id("MarshalYAMLWithTag").Call(Id(v), Id("Kind"+field.Name))),
-		).Empty()
+			Type().Id("alias"+field.Name).Id(field.Name),
+			Id("data").Op(":=").Id("alias"+field.Name).Call(Id(v)),
+			Id("node").Op(":=").Op("&").Qual("gopkg.in/yaml.v3", "Node").Values(),
+			Id("node.Kind").Op("=").Qual("gopkg.in/yaml.v3", "MappingNode"),
+			If(Id("err").Op(":=").Id("node").Dot("Encode").Call(Id("data")), Id("err").Op("!=").Nil()).Block(
+				Return(Nil(), Id("err"))),
+			Comment("Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode"),
+			Comment("when the resource struct is empty!"),
+			If(Len(Id("node").Dot("Content")).Op("==").Id("0")).Block(
+				Id("node").Dot("Kind").Op("=").Qual("gopkg.in/yaml.v3", "ScalarNode")),
+			Id("node").Dot("Tag").Op("=").Id("Kind"+field.Name).Dot("Tag").Call(),
+			Id("node").Dot("Style").Op("=").Qual("gopkg.in/yaml.v3", "TaggedStyle"),
+			Return(Id("node"), Nil()),
+		)
 
 		// Prepare cases for UnmarshalYAML
 		cases = append(cases, Case(Id("Kind"+field.Name+".Tag()")).Block(
 			Var().Id(strings.ToLower(field.Name)).Id(field.Name),
-			If(Id("len").Call(Id("node.Value")).Op(">").Id("0").Op("||").Id(
-				"len").Call(Id("node.Content")).Op(">").Id("0").Block(
-				If(Id("err").Op(":=").Id("node.Decode").Call(Id("&"+strings.ToLower(field.Name))), Id("err").Op("!=").Nil().Block(
+			If(Len(Id("node").Dot("Value")).Op(">").Id("0").Op("||").Len(
+				Id("node").Dot("Content")).Op(">").Id("0").Block(
+				If(Id("err").Op(":=").Id("node").Dot("Decode").Call(Op("&").Id(strings.ToLower(field.Name))), Id("err").Op("!=").Nil().Block(
 					Return(Id("err")),
 				)),
 			)),
@@ -56,13 +71,13 @@ func generate(inputType interface{}) {
 	).Params(Error()).Block(
 		Var().Id("statements").Id("[]Resource"),
 		For(
-			Id("_, ").Id("node").Op(":=").Range().Id("value.Content").Block(
+			Id("_, ").Id("node").Op(":=").Range().Id("value").Dot("Content").Block(
 				Var().Id("statement").Id("Resource"),
-				Switch(Id("node.Tag")).Block(cases...),
+				Switch(Id("node").Dot("Tag")).Block(cases...),
 				Id("statements").Op("=").Append(Id("statements"), Id("statement")),
 			),
 		),
-		Id("*s").Op("=").Id("statements"),
+		Op("*").Id("s").Op("=").Id("statements"),
 		Return(Nil()),
 	)
 

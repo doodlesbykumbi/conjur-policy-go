@@ -153,3 +153,69 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkResourceMarshal(b *testing.B) {
+	policy := PolicyStatements{
+		Policy{
+			Id:    "dev",
+			Owner: UserRef("admin"),
+			Annotations: Annotations{
+				"foo": "bar",
+			},
+			Body: PolicyStatements{
+				Group{
+					Id:    "bar",
+					Owner: UserRef("foo"),
+				},
+				User{
+					Id:    "foo",
+					Owner: UserRef("admin"),
+				},
+			},
+		},
+		Policy{
+			Owner: UserRef("admin"),
+			Id:    "pcf/prod",
+			Body: PolicyStatements{
+				Group{
+					Id:    "bar",
+					Owner: UserRef("foo"),
+				},
+				User{
+					Id:    "foo",
+					Owner: UserRef("admin"),
+				},
+			},
+		},
+	}
+	for i := 0; i < b.N; i++ {
+		_, _ = yaml.Marshal(policy)
+	}
+}
+
+func BenchmarkResourceUnmarshal(b *testing.B) {
+	var p PolicyStatements
+	policy := []byte(`
+- !policy
+  id: dev
+  owner: !user /admin
+  annotations:
+    foo: bar
+  body:
+    - !policy
+      id: /inner
+      body:
+      - !group
+        id: bar
+        owner: !user foo
+    - !group
+      id: bar
+      owner: !user foo
+    - !user
+      id: foo
+      owner: !user admin
+`)
+	for i := 0; i < b.N; i++ {
+		_ = yaml.Unmarshal(policy, &p)
+	}
+}

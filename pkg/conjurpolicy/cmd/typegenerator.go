@@ -35,24 +35,17 @@ func generate(inputType interface{}) {
 			Return(Id("MarshalYAMLWithTag").Call(Id(v), Id("Kind"+field.Name))),
 		).Empty()
 
-		// Prepare cases for UnmarshalYAML (decoding is skipped for Layer type)
-		if field.Name == conjurpolicy.KindLayer.String() {
-			cases = append(cases, Case(Id("Kind"+field.Name+".Tag()")).Block(
-				Var().Id(strings.ToLower(field.Name)).Id(field.Name),
-				Id("statement").Op("=").Id(strings.ToLower(field.Name)),
-			))
-		} else {
-			cases = append(cases, Case(Id("Kind"+field.Name+".Tag()")).Block(
-				Var().Id(strings.ToLower(field.Name)).Id(field.Name),
-				If(Id("len").Call(Id("node.Value")).Op(">").Id("0").Op("||").Id(
-					"len").Call(Id("node.Content")).Op(">").Id("0").Block(
-					If(Id("err").Op(":=").Id("node.Decode").Call(Id("&"+strings.ToLower(field.Name))), Id("err").Op("!=").Nil().Block(
-						Return(Id("err")),
-					)),
+		// Prepare cases for UnmarshalYAML
+		cases = append(cases, Case(Id("Kind"+field.Name+".Tag()")).Block(
+			Var().Id(strings.ToLower(field.Name)).Id(field.Name),
+			If(Id("len").Call(Id("node.Value")).Op(">").Id("0").Op("||").Id(
+				"len").Call(Id("node.Content")).Op(">").Id("0").Block(
+				If(Id("err").Op(":=").Id("node.Decode").Call(Id("&"+strings.ToLower(field.Name))), Id("err").Op("!=").Nil().Block(
+					Return(Id("err")),
 				)),
-				Id("statement").Op("=").Id(strings.ToLower(field.Name)),
-			))
-		}
+			)),
+			Id("statement").Op("=").Id(strings.ToLower(field.Name)),
+		))
 	}
 
 	// UnmarshalYAML function generation

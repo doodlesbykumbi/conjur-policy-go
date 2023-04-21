@@ -1,25 +1,8 @@
 package conjurpolicy
 
+//go:generate go run ../../internal/typegenerator.go -types "Policy Variable User Group Layer Grant Host Delete Permit Deny"
 type Resource interface {
 	unused() // to prevent Resource from being used as a type
-}
-
-type Resources interface {
-	Policy | Variable | User | Group | Layer | Grant | Host | Delete | Permit | Deny
-}
-
-//go:generate go run ../../internal/typegenerator.go -type Resources2
-type Resources2 struct {
-	Policy
-	Variable
-	User
-	Group
-	Layer
-	Grant
-	Host
-	Delete
-	Permit
-	Deny
 }
 
 type Group struct {

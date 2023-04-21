@@ -5,11 +5,13 @@ package main
 
 import (
 	"flag"
-	. "github.com/dave/jennifer/jen"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	. "github.com/dave/jennifer/jen"
+
 )
 
 const (
@@ -99,7 +101,7 @@ func generate(inNames ...string) {
 	goFile := os.Getenv("GOFILE")
 	ext := filepath.Ext(goFile)
 	baseFilename := goFile[0 : len(goFile)-len(ext)]
-	targetFilename := baseFilename + "_gen.go"
+	targetFilename := baseFilename + ".gen.go"
 	if err := f.Save(targetFilename); err != nil {
 		log.Fatal("Error while generating Go file: ", err)
 	}

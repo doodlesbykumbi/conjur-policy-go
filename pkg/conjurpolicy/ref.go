@@ -42,7 +42,7 @@ func (r *ResourceRef) UnmarshalYAML(value *yaml.Node) (err error) {
 	}
 
 	r.Id = id
-	r.Kind, err = KindString(value.Tag[1:])
+	r.Kind, err = ParseKind(value.Tag[1:])
 	if err != nil {
 		return
 	}

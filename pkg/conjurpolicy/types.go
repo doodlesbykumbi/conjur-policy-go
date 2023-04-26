@@ -1,6 +1,5 @@
 package conjurpolicy
 
-//go:generate go run ../../internal/typegenerator/main.go -types "Policy Variable User Group Layer Grant Host Delete Permit Deny"
 type Resource interface {
 	unused() // to prevent Resource from being used as a type
 }

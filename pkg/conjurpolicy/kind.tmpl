@@ -1,0 +1,44 @@
+{{ range $e := .enum.Values -}}
+    {{ $eShort := printf "%.1s" $e.ValueStr }}
+	func ({{ $eShort }} {{ $e.Name }}) MarshalYAML() (interface{}, error) {
+    	type alias{{ $e.Name }} {{ $e.Name }}
+    	data := alias{{ $e.Name }}({{ $eShort }})
+    	node := &yamlv3.Node{}
+    	node.Kind = yamlv3.MappingNode
+    	if err := node.Encode(data); err != nil {
+    		return nil, err
+    	}
+    	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
+    	// when the resource struct is empty!
+    	if len(node.Content) == 0 {
+    		node.Kind = yamlv3.ScalarNode
+    	}
+    	node.Tag = {{ $e.PrefixedName }}.Tag()
+    	node.Style = yamlv3.TaggedStyle
+    	return node, nil
+    }
+
+{{ end -}}
+
+func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
+	var statements []Resource
+	for _, node := range value.Content {
+		var statement Resource
+		switch node.Tag {
+		{{ range $e := .enum.Values -}}
+		{{ $eShort := printf "%.1s" $e.ValueStr }}
+        case {{ $e.PrefixedName }}.Tag():
+        			var {{ $eShort }} {{ $e.Name }}
+        			if len(node.Value) > 0 || len(node.Content) > 0 {
+        				if err := node.Decode(&{{ $eShort }}); err != nil {
+        					return err
+        				}
+        			}
+        			statement = {{ $eShort }}
+		{{ end -}}
+		}
+		statements = append(statements, statement)
+	}
+	*s = statements
+	return nil
+}

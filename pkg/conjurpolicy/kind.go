@@ -1,21 +1,9 @@
 package conjurpolicy
 
-//go:generate go run github.com/dmarkham/enumer -type Kind -trimprefix Kind -transform lower -yaml -output kind.gen.go
+//go:generate go run github.com/abice/go-enum -t kind.tmpl
 
+// ENUM(policy, variable, user, group, layer, grant, host, delete, permit, deny)
 type Kind int
-
-const (
-	KindPolicy Kind = iota
-	KindVariable
-	KindUser
-	KindGroup
-	KindLayer
-	KindGrant
-	KindHost
-	KindDelete
-	KindPermit
-	KindDeny
-)
 
 func (t Kind) Tag() string {
 	return "!" + t.String()

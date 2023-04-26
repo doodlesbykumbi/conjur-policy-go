@@ -10,272 +10,272 @@ import (
 	"errors"
 	"fmt"
 
-	yamlv3 "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 )
 
 const (
-	// KindPolicy is a Kind of type Policy.
-	KindPolicy Kind = iota
-	// KindVariable is a Kind of type Variable.
-	KindVariable
-	// KindUser is a Kind of type User.
-	KindUser
-	// KindGroup is a Kind of type Group.
-	KindGroup
-	// KindLayer is a Kind of type Layer.
-	KindLayer
-	// KindGrant is a Kind of type Grant.
-	KindGrant
-	// KindHost is a Kind of type Host.
-	KindHost
-	// KindDelete is a Kind of type Delete.
-	KindDelete
-	// KindPermit is a Kind of type Permit.
-	KindPermit
-	// KindDeny is a Kind of type Deny.
-	KindDeny
+	// TypePolicy is a Type of type Policy.
+	TypePolicy Type = iota
+	// TypeVariable is a Type of type Variable.
+	TypeVariable
+	// TypeUser is a Type of type User.
+	TypeUser
+	// TypeGroup is a Type of type Group.
+	TypeGroup
+	// TypeLayer is a Type of type Layer.
+	TypeLayer
+	// TypeGrant is a Type of type Grant.
+	TypeGrant
+	// TypeHost is a Type of type Host.
+	TypeHost
+	// TypeDelete is a Type of type Delete.
+	TypeDelete
+	// TypePermit is a Type of type Permit.
+	TypePermit
+	// TypeDeny is a Type of type Deny.
+	TypeDeny
 )
 
-var ErrInvalidKind = errors.New("not a valid Kind")
+var ErrInvalidType = errors.New("not a valid Type")
 
-const _KindName = "policyvariableusergrouplayergranthostdeletepermitdeny"
+const _TypeName = "policyvariableusergrouplayergranthostdeletepermitdeny"
 
-var _KindMap = map[Kind]string{
-	KindPolicy:   _KindName[0:6],
-	KindVariable: _KindName[6:14],
-	KindUser:     _KindName[14:18],
-	KindGroup:    _KindName[18:23],
-	KindLayer:    _KindName[23:28],
-	KindGrant:    _KindName[28:33],
-	KindHost:     _KindName[33:37],
-	KindDelete:   _KindName[37:43],
-	KindPermit:   _KindName[43:49],
-	KindDeny:     _KindName[49:53],
+var _TypeMap = map[Type]string{
+	TypePolicy:   _TypeName[0:6],
+	TypeVariable: _TypeName[6:14],
+	TypeUser:     _TypeName[14:18],
+	TypeGroup:    _TypeName[18:23],
+	TypeLayer:    _TypeName[23:28],
+	TypeGrant:    _TypeName[28:33],
+	TypeHost:     _TypeName[33:37],
+	TypeDelete:   _TypeName[37:43],
+	TypePermit:   _TypeName[43:49],
+	TypeDeny:     _TypeName[49:53],
 }
 
 // String implements the Stringer interface.
-func (x Kind) String() string {
-	if str, ok := _KindMap[x]; ok {
+func (x Type) String() string {
+	if str, ok := _TypeMap[x]; ok {
 		return str
 	}
-	return fmt.Sprintf("Kind(%d)", x)
+	return fmt.Sprintf("Type(%d)", x)
 }
 
 // IsValid provides a quick way to determine if the typed value is
 // part of the allowed enumerated values
-func (x Kind) IsValid() bool {
-	_, ok := _KindMap[x]
+func (x Type) IsValid() bool {
+	_, ok := _TypeMap[x]
 	return ok
 }
 
-var _KindValue = map[string]Kind{
-	_KindName[0:6]:   KindPolicy,
-	_KindName[6:14]:  KindVariable,
-	_KindName[14:18]: KindUser,
-	_KindName[18:23]: KindGroup,
-	_KindName[23:28]: KindLayer,
-	_KindName[28:33]: KindGrant,
-	_KindName[33:37]: KindHost,
-	_KindName[37:43]: KindDelete,
-	_KindName[43:49]: KindPermit,
-	_KindName[49:53]: KindDeny,
+var _TypeValue = map[string]Type{
+	_TypeName[0:6]:   TypePolicy,
+	_TypeName[6:14]:  TypeVariable,
+	_TypeName[14:18]: TypeUser,
+	_TypeName[18:23]: TypeGroup,
+	_TypeName[23:28]: TypeLayer,
+	_TypeName[28:33]: TypeGrant,
+	_TypeName[33:37]: TypeHost,
+	_TypeName[37:43]: TypeDelete,
+	_TypeName[43:49]: TypePermit,
+	_TypeName[49:53]: TypeDeny,
 }
 
-// ParseKind attempts to convert a string to a Kind.
-func ParseKind(name string) (Kind, error) {
-	if x, ok := _KindValue[name]; ok {
+// ParseType attempts to convert a string to a Type.
+func ParseType(name string) (Type, error) {
+	if x, ok := _TypeValue[name]; ok {
 		return x, nil
 	}
-	return Kind(0), fmt.Errorf("%s is %w", name, ErrInvalidKind)
+	return Type(0), fmt.Errorf("%s is %w", name, ErrInvalidType)
 }
 
 func (p Policy) MarshalYAML() (interface{}, error) {
 	type aliasPolicy Policy
 	data := aliasPolicy(p)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindPolicy.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypePolicy.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (v Variable) MarshalYAML() (interface{}, error) {
 	type aliasVariable Variable
 	data := aliasVariable(v)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindVariable.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypeVariable.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (u User) MarshalYAML() (interface{}, error) {
 	type aliasUser User
 	data := aliasUser(u)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindUser.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypeUser.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (g Group) MarshalYAML() (interface{}, error) {
 	type aliasGroup Group
 	data := aliasGroup(g)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindGroup.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypeGroup.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (l Layer) MarshalYAML() (interface{}, error) {
 	type aliasLayer Layer
 	data := aliasLayer(l)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindLayer.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypeLayer.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (g Grant) MarshalYAML() (interface{}, error) {
 	type aliasGrant Grant
 	data := aliasGrant(g)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindGrant.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypeGrant.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (h Host) MarshalYAML() (interface{}, error) {
 	type aliasHost Host
 	data := aliasHost(h)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindHost.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypeHost.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (d Delete) MarshalYAML() (interface{}, error) {
 	type aliasDelete Delete
 	data := aliasDelete(d)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindDelete.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypeDelete.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (p Permit) MarshalYAML() (interface{}, error) {
 	type aliasPermit Permit
 	data := aliasPermit(p)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindPermit.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypePermit.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
 func (d Deny) MarshalYAML() (interface{}, error) {
 	type aliasDeny Deny
 	data := aliasDeny(d)
-	node := &yamlv3.Node{}
-	node.Kind = yamlv3.MappingNode
+	node := &yaml.Node{}
+	node.Kind = yaml.MappingNode
 	if err := node.Encode(data); err != nil {
 		return nil, err
 	}
 	// Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
 	// when the resource struct is empty!
 	if len(node.Content) == 0 {
-		node.Kind = yamlv3.ScalarNode
+		node.Kind = yaml.ScalarNode
 	}
-	node.Tag = KindDeny.Tag()
-	node.Style = yamlv3.TaggedStyle
+	node.Tag = TypeDeny.Tag()
+	node.Style = yaml.TaggedStyle
 	return node, nil
 }
 
-func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
+func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 	var statements []Resource
 	for _, node := range value.Content {
 		var statement Resource
 		switch node.Tag {
 
-		case KindPolicy.Tag():
+		case TypePolicy.Tag():
 			var p Policy
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&p); err != nil {
@@ -284,7 +284,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = p
 
-		case KindVariable.Tag():
+		case TypeVariable.Tag():
 			var v Variable
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&v); err != nil {
@@ -293,7 +293,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = v
 
-		case KindUser.Tag():
+		case TypeUser.Tag():
 			var u User
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&u); err != nil {
@@ -302,7 +302,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = u
 
-		case KindGroup.Tag():
+		case TypeGroup.Tag():
 			var g Group
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&g); err != nil {
@@ -311,7 +311,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = g
 
-		case KindLayer.Tag():
+		case TypeLayer.Tag():
 			var l Layer
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&l); err != nil {
@@ -320,7 +320,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = l
 
-		case KindGrant.Tag():
+		case TypeGrant.Tag():
 			var g Grant
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&g); err != nil {
@@ -329,7 +329,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = g
 
-		case KindHost.Tag():
+		case TypeHost.Tag():
 			var h Host
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&h); err != nil {
@@ -338,7 +338,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = h
 
-		case KindDelete.Tag():
+		case TypeDelete.Tag():
 			var d Delete
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&d); err != nil {
@@ -347,7 +347,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = d
 
-		case KindPermit.Tag():
+		case TypePermit.Tag():
 			var p Permit
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&p); err != nil {
@@ -356,7 +356,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 			}
 			statement = p
 
-		case KindDeny.Tag():
+		case TypeDeny.Tag():
 			var d Deny
 			if len(node.Value) > 0 || len(node.Content) > 0 {
 				if err := node.Decode(&d); err != nil {
@@ -369,4 +369,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yamlv3.Node) error {
 	}
 	*s = statements
 	return nil
+}
+
+// Tag is a method that returns a YAML tag from entity kind
+func (t Type) Tag() string {
+	return "!" + t.String()
 }

@@ -4,34 +4,34 @@ import "gopkg.in/yaml.v3"
 
 type ResourceRef struct {
 	Id   string `yaml:"id"`
-	Kind Kind
+	Type Type
 }
 
 func UserRef(id string) ResourceRef {
 	return ResourceRef{
 		Id:   id,
-		Kind: KindUser,
+		Type: TypeUser,
 	}
 }
 
 func LayerRef(id string) ResourceRef {
 	return ResourceRef{
 		Id:   id,
-		Kind: KindLayer,
+		Type: TypeLayer,
 	}
 }
 
 func HostRef(id string) ResourceRef {
 	return ResourceRef{
 		Id:   id,
-		Kind: KindHost,
+		Type: TypeHost,
 	}
 }
 
 func VariableRef(id string) ResourceRef {
 	return ResourceRef{
 		Id:   id,
-		Kind: KindVariable,
+		Type: TypeVariable,
 	}
 }
 
@@ -42,7 +42,7 @@ func (r *ResourceRef) UnmarshalYAML(value *yaml.Node) (err error) {
 	}
 
 	r.Id = id
-	r.Kind, err = ParseKind(value.Tag[1:])
+	r.Type, err = ParseType(value.Tag[1:])
 	if err != nil {
 		return
 	}
@@ -53,7 +53,7 @@ func (r ResourceRef) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{
 		Kind:  yaml.ScalarNode,
 		Value: r.Id,
-		Tag:   r.Kind.Tag(),
+		Tag:   r.Type.Tag(),
 		Style: yaml.TaggedStyle,
 	}, nil
 }

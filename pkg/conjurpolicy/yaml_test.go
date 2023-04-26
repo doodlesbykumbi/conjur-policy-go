@@ -79,7 +79,7 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 				Id: "policy-with-owner",
 				Owner: ResourceRef{
 					Id:   "test-owner",
-					Kind: KindUser,
+					Type: TypeUser,
 				},
 			}},
 			expected: `- !policy

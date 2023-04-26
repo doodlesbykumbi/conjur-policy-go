@@ -1,5 +1,11 @@
 package conjurpolicy
 
+//go:generate go run github.com/abice/go-enum -t yaml.tmpl
+
+// Type is an enum representing conjur policy types
+// ENUM(policy, variable, user, group, layer, grant, host, delete, permit, deny)
+type Type int
+
 type Resource interface {
 	unused() // to prevent Resource from being used as a type
 }

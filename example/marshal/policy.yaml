@@ -1,0 +1,22 @@
+- !policy
+  id: dev
+  annotations:
+    foo: bar
+  owner: !user admin
+  body:
+    - !group
+      id: bar
+      owner: !user foo
+    - !user
+      id: foo
+      owner: !user admin
+- !policy
+  id: pcf/prod
+  owner: !user admin
+  body:
+    - !group
+      id: bar
+      owner: !user foo
+    - !user
+      id: foo
+      owner: !user admin

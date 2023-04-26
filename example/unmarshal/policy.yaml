@@ -1,0 +1,18 @@
+- !policy
+  id: dev
+  owner: !user /admin
+  annotations:
+    foo: bar
+  body:
+    - !policy
+      id: /inner
+      body:
+        - !group
+          id: bar
+          owner: !user foo
+    - !group
+      id: bar
+      owner: !user foo
+    - !user
+      id: foo
+      owner: !user admin

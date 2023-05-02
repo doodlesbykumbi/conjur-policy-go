@@ -14,6 +14,12 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 		expected string
 	}{
 		{
+			name:   "nil",
+			policy: nil,
+			expected: `
+`,
+		},
+		{
 			name:   "empty-policy",
 			policy: PolicyStatements{Policy{Id: "empty-policy"}},
 			expected: `- !policy
@@ -152,6 +158,15 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 			assert.Equal(t, tc.policy, policy)
 		})
 	}
+}
+
+func TestEmptyPolicyStatementsMarshal(t *testing.T) {
+	t.Run("empty policy statements", func(t *testing.T) {
+		// Marshal
+		actual, err := yaml.Marshal(PolicyStatements{})
+		assert.NoError(t, err)
+		assert.Equal(t, "\n", string(actual))
+	})
 }
 
 func BenchmarkResourceMarshal(b *testing.B) {

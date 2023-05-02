@@ -1,5 +1,9 @@
 package conjurpolicy
 
+import (
+	"gopkg.in/yaml.v3"
+)
+
 //go:generate go run github.com/abice/go-enum -t yaml.tmpl
 
 // Type is an enum representing conjur policy types
@@ -79,3 +83,11 @@ type Deny struct {
 }
 
 type PolicyStatements []Resource
+
+func (p PolicyStatements) MarshalYAML() (interface{}, error) {
+	if len(p) == 0 { // empty policy statements should result in empty yaml
+		return &yaml.Node{Kind: yaml.ScalarNode}, nil
+	}
+	type aliasType PolicyStatements
+	return aliasType(p), nil
+}

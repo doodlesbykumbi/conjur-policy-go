@@ -269,6 +269,21 @@ func (d Deny) MarshalYAML() (interface{}, error) {
 	return node, nil
 }
 
+func toID(node *yaml.Node) *yaml.Node {
+	node.Kind = yaml.MappingNode
+	node.Content = []*yaml.Node{
+		&yaml.Node{
+			Value: "id",
+			Kind:  yaml.ScalarNode,
+		},
+		&yaml.Node{
+			Value: node.Value,
+			Kind:  yaml.ScalarNode,
+		},
+	}
+	return node
+}
+
 func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 	var statements []Resource
 	for _, node := range value.Content {
@@ -278,6 +293,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypePolicy.Tag():
 			var p Policy
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&p); err != nil {
 					return err
 				}
@@ -287,6 +305,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypeVariable.Tag():
 			var v Variable
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&v); err != nil {
 					return err
 				}
@@ -296,6 +317,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypeUser.Tag():
 			var u User
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&u); err != nil {
 					return err
 				}
@@ -305,6 +329,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypeGroup.Tag():
 			var g Group
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&g); err != nil {
 					return err
 				}
@@ -314,6 +341,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypeLayer.Tag():
 			var l Layer
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&l); err != nil {
 					return err
 				}
@@ -323,6 +353,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypeGrant.Tag():
 			var g Grant
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&g); err != nil {
 					return err
 				}
@@ -332,6 +365,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypeHost.Tag():
 			var h Host
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&h); err != nil {
 					return err
 				}
@@ -341,6 +377,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypeDelete.Tag():
 			var d Delete
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&d); err != nil {
 					return err
 				}
@@ -350,6 +389,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypePermit.Tag():
 			var p Permit
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&p); err != nil {
 					return err
 				}
@@ -359,6 +401,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case TypeDeny.Tag():
 			var d Deny
 			if len(node.Value) > 0 || len(node.Content) > 0 {
+				if len(node.Content) == 0 && len(node.Value) > 0 {
+					node = toID(node)
+				}
 				if err := node.Decode(&d); err != nil {
 					return err
 				}

@@ -66,6 +66,13 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 `,
 		},
 		{
+			name:   "host with id",
+			policy: PolicyStatements{Host{Id: "host1"}},
+			expected: `- !host
+  id: host1
+`,
+		},
+		{
 			name: "policy-with-annotations",
 			policy: PolicyStatements{Policy{
 				Id: "policy-with-annotations",
@@ -156,6 +163,32 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 			err = yaml.Unmarshal([]byte(tc.expected), &policy)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.policy, policy)
+		})
+	}
+}
+
+func TestResourceUnmarshal(t *testing.T) {
+	testCases := []struct {
+		name     string
+		policy   string
+		expected PolicyStatements
+	}{
+		{
+			name: "host with id",
+			policy: `- !host host1
+`,
+			expected: PolicyStatements{Host{Id: "host1"}},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			// Unmarshal
+			var policy PolicyStatements
+			err := yaml.Unmarshal([]byte(tc.policy), &policy)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, policy)
 		})
 	}
 }

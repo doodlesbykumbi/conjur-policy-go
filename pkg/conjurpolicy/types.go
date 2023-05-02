@@ -47,6 +47,7 @@ type Policy struct {
 
 type Layer struct {
 	Resource `yaml:"-"`
+	Id       string `yaml:"id,omitempty"`
 }
 
 type Grant struct {

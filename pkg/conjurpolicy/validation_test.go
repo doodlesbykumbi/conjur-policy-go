@@ -23,7 +23,7 @@ func TestValidateDuplicatesInPolicy(t *testing.T) {
   - !permit
     role: !group secret-consumers
     resource: !variable secret
-    privilege: [ read, execute ]
+    privileges: [ read, execute ]
 
   - !grant
     role: !group secret-consumers

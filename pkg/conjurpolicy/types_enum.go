@@ -296,6 +296,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&p); err != nil {
 					return err
 				}
@@ -308,6 +309,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&v); err != nil {
 					return err
 				}
@@ -320,6 +322,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&u); err != nil {
 					return err
 				}
@@ -332,6 +335,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&g); err != nil {
 					return err
 				}
@@ -344,6 +348,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&l); err != nil {
 					return err
 				}
@@ -356,6 +361,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&g); err != nil {
 					return err
 				}
@@ -368,6 +374,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&h); err != nil {
 					return err
 				}
@@ -380,6 +387,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&d); err != nil {
 					return err
 				}
@@ -392,6 +400,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&p); err != nil {
 					return err
 				}
@@ -404,6 +413,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 				if len(node.Content) == 0 && len(node.Value) > 0 {
 					node = toID(node)
 				}
+				node.KnownFields(true)
 				if err := node.Decode(&d); err != nil {
 					return err
 				}

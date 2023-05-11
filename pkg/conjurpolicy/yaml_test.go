@@ -169,25 +169,32 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 
 func TestResourceUnmarshal(t *testing.T) {
 	testCases := []struct {
-		name     string
-		policy   string
-		expected PolicyStatements
+		name        string
+		policy      string
+		expected    PolicyStatements
+		expectedErr string
 	}{
 		{
 			name: "host with id",
 			policy: `- !host host1
 `,
 			expected: PolicyStatements{Host{Id: "host1"}},
+		}, {
+			name: "permit failure",
+			policy: `- !permit permit1
+`,
+			expectedErr: "yaml: unmarshal errors:\n  line 0: field id not found in type conjurpolicy.Permit",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			// Unmarshal
 			var policy PolicyStatements
 			err := yaml.Unmarshal([]byte(tc.policy), &policy)
-			assert.NoError(t, err)
+			if len(tc.expectedErr) > 0 {
+				assert.EqualError(t, err, tc.expectedErr)
+			}
 			assert.Equal(t, tc.expected, policy)
 		})
 	}

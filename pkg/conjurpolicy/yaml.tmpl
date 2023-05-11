@@ -48,6 +48,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
                 if len(node.Content) == 0 && len(node.Value) > 0 {
                   node = toID(node)
                 }
+                node.KnownFields(true)
                 if err := node.Decode(&{{ $eShort }}); err != nil {
                   return err
                 }

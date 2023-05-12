@@ -72,6 +72,8 @@ What is needed to achieve feature parity with ruby implementation?
 - [x] special handling of inlined id on objects with single attribute
 - [x] validate attribute duplications
 - [x] provide negative test-cases (e.g. invalid syntax)
+- [ ] add license
+- [ ] provide docs
 - [ ] support for all entities [policy statements](https://docs.conjur.org/Latest/en/Content/Operations/Policy/policy-statement-ref.htm?tocpath=Fundamentals%7CPolicy%7CPolicy%20statement%20reference%7C_____0)
 - [ ] verify fields available on model entities
 - [ ] tag reference [strong typing](https://docs.conjur.org/Latest/en/Content/Operations/Policy/statement-ref-permit.htm?tocpath=Fundamentals%7CPolicy%7CPolicy%20statement%20reference%7C_____8#Attributes)

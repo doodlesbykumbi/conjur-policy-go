@@ -184,6 +184,29 @@ func TestResourceUnmarshal(t *testing.T) {
 			policy: `- !permit permit1
 `,
 			expectedErr: "yaml: unmarshal errors:\n  line 0: field id not found in type conjurpolicy.Permit",
+		}, {
+			name: "include file inline",
+			policy: `- !include inc.yaml
+`,
+			expected: PolicyStatements{Host{Id: "host1"}},
+		}, {
+			name: "include file with file attr",
+			policy: `- !include
+  file: inc.yaml
+`,
+			expected: PolicyStatements{Host{Id: "host1"}},
+		}, {
+			name: "include invalid file",
+			policy: `- !include
+  file: invalid.yaml
+`,
+			expectedErr: "yaml: line 1: open invalid.yaml: no such file or directory",
+		}, {
+			name: "include file with file attr and inline",
+			policy: `- !include inc.yaml
+  file: inc.yaml
+`,
+			expectedErr: "yaml: line 2: mapping values are not allowed in this context",
 		},
 	}
 
@@ -194,6 +217,8 @@ func TestResourceUnmarshal(t *testing.T) {
 			err := yaml.Unmarshal([]byte(tc.policy), &policy)
 			if len(tc.expectedErr) > 0 {
 				assert.EqualError(t, err, tc.expectedErr)
+			} else {
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tc.expected, policy)
 		})

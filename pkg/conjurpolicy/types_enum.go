@@ -287,8 +287,13 @@ func toID(node *yaml.Node) *yaml.Node {
 func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 	var statements []Resource
 	for _, node := range value.Content {
-		var statement Resource
 		switch node.Tag {
+		case "!include":
+			s, err := include(node)
+			if err != nil {
+				return fmt.Errorf("yaml: line %d: %w", node.Line, err)
+			}
+			statements = append(statements, s...)
 
 		case TypePolicy.Tag():
 			var p Policy
@@ -301,7 +306,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = p
+			statements = append(statements, p)
 
 		case TypeVariable.Tag():
 			var v Variable
@@ -314,7 +319,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = v
+			statements = append(statements, v)
 
 		case TypeUser.Tag():
 			var u User
@@ -327,7 +332,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = u
+			statements = append(statements, u)
 
 		case TypeGroup.Tag():
 			var g Group
@@ -340,7 +345,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = g
+			statements = append(statements, g)
 
 		case TypeLayer.Tag():
 			var l Layer
@@ -353,7 +358,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = l
+			statements = append(statements, l)
 
 		case TypeGrant.Tag():
 			var g Grant
@@ -366,7 +371,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = g
+			statements = append(statements, g)
 
 		case TypeHost.Tag():
 			var h Host
@@ -379,7 +384,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = h
+			statements = append(statements, h)
 
 		case TypeDelete.Tag():
 			var d Delete
@@ -392,7 +397,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = d
+			statements = append(statements, d)
 
 		case TypePermit.Tag():
 			var p Permit
@@ -405,7 +410,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = p
+			statements = append(statements, p)
 
 		case TypeDeny.Tag():
 			var d Deny
@@ -418,9 +423,8 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 					return err
 				}
 			}
-			statement = d
+			statements = append(statements, d)
 		}
-		statements = append(statements, statement)
 	}
 	*s = statements
 	return nil

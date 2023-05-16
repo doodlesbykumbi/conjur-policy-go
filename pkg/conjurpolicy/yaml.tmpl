@@ -38,8 +38,13 @@ func toID(node *yaml.Node) *yaml.Node {
 func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
   var statements []Resource
   for _, node := range value.Content {
-    var statement Resource
     switch node.Tag {
+        case "!include":
+              s, err := include(node)
+              if err != nil {
+				          return fmt.Errorf("yaml: line %d: %w", node.Line, err)
+              }
+              statements = append(statements, s...)
     {{ range $e := .enum.Values -}}
     {{ $eShort := printf "%.1s" $e.ValueStr }}
         case {{ $e.PrefixedName }}.Tag():
@@ -53,10 +58,9 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
                   return err
                 }
               }
-              statement = {{ $eShort }}
+              statements = append(statements, {{ $eShort }})
     {{ end -}}
     }
-    statements = append(statements, statement)
   }
   *s = statements
   return nil

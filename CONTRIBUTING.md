@@ -19,3 +19,32 @@ Ensure changes to the source files for code generation are accompanied by the co
 ```shell
 go generate ./...
 ```
+
+## Pre-commit
+
+This project uses pre-commit hooks to ensure changes are properly formatted and validated by linters. <br>
+It also contains gitleaks to ensure no credentials are present in code.
+
+### Installation
+
+For MacOS users
+```shell
+brew install pre-commit
+```
+
+Install using pip
+```shell
+python -m pip install pre-commit
+```
+
+### Usage
+
+To manually run pre-commit hooks on all files:
+```shell
+pre-commit run --all-files
+```
+
+To install pre-commit hooks (it will then automatically run on each commit)
+```shell
+pre-commit install
+```

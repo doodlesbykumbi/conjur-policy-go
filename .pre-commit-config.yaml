@@ -1,0 +1,74 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.16.3
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+        #
+        # Go Generate
+        #
+      - id: go-generate
+        language: golang
+        name: run go generate
+        entry: go generate ./...
+        pass_filenames: false
+        #
+        # Go Build
+        #
+      - id: go-build-mod
+        language: golang
+        name: run go build
+        entry: go build
+        pass_filenames: false
+      #
+      # Go Mod Tidy
+      #
+      - id: go-mod-tidy
+        language: golang
+        name: run go mod
+        entry: go mod tidy
+        pass_filenames: false
+      #
+      # Go Test
+      #
+      - id: go-test-mod
+        language: golang
+        name: run go test
+        entry: go test
+        pass_filenames: false
+      #
+      # Revive
+      #
+      - id: go-revive
+        name: run revive
+        language: golang
+        additional_dependencies: [github.com/mgechev/revive@latest]
+        entry: revive
+        types: [go]
+      #
+      # StaticCheck
+      #
+      - id: go-staticcheck
+        name: run staticcheck
+        language: golang
+        additional_dependencies: [honnef.co/go/tools/cmd/staticcheck@latest]
+        entry: staticcheck ./...
+        pass_filenames: false
+        always_run: true
+      #
+      # Formatters
+      #
+      - id: go-imports      # replaces go-fmt
+        name: run goimports
+        language: golang
+        additional_dependencies: [golang.org/x/tools/cmd/goimports@latest]
+        entry: goimports
+        types: [go]

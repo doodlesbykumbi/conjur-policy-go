@@ -42,7 +42,7 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
         case "!include":
               s, err := include(node)
               if err != nil {
-				          return fmt.Errorf("yaml: line %d: %w", node.Line, err)
+                  return fmt.Errorf("yaml: line %d: %w", node.Line, err)
               }
               statements = append(statements, s...)
     {{ range $e := .enum.Values -}}

@@ -14,6 +14,12 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 		expected string
 	}{
 		{
+			name:   "nil",
+			policy: nil,
+			expected: `
+`,
+		},
+		{
 			name:   "empty-policy",
 			policy: PolicyStatements{Policy{Id: "empty-policy"}},
 			expected: `- !policy
@@ -60,6 +66,13 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 `,
 		},
 		{
+			name:   "host with id",
+			policy: PolicyStatements{Host{Id: "host1"}},
+			expected: `- !host
+  id: host1
+`,
+		},
+		{
 			name: "policy-with-annotations",
 			policy: PolicyStatements{Policy{
 				Id: "policy-with-annotations",
@@ -79,7 +92,7 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 				Id: "policy-with-owner",
 				Owner: ResourceRef{
 					Id:   "test-owner",
-					Kind: KindUser,
+					Type: TypeUser,
 				},
 			}},
 			expected: `- !policy
@@ -151,5 +164,138 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tc.policy, policy)
 		})
+	}
+}
+
+func TestResourceUnmarshal(t *testing.T) {
+	testCases := []struct {
+		name        string
+		policy      string
+		expected    PolicyStatements
+		expectedErr string
+	}{
+		{
+			name: "host with id",
+			policy: `- !host host1
+`,
+			expected: PolicyStatements{Host{Id: "host1"}},
+		}, {
+			name: "permit failure",
+			policy: `- !permit permit1
+`,
+			expectedErr: "yaml: unmarshal errors:\n  line 0: field id not found in type conjurpolicy.Permit",
+		}, {
+			name: "include file inline",
+			policy: `- !include inc.yaml
+`,
+			expected: PolicyStatements{Host{Id: "host1"}},
+		}, {
+			name: "include file with file attr",
+			policy: `- !include
+  file: inc.yaml
+`,
+			expected: PolicyStatements{Host{Id: "host1"}},
+		}, {
+			name: "include invalid file",
+			policy: `- !include
+  file: invalid.yaml
+`,
+			expectedErr: "yaml: line 1: open invalid.yaml: no such file or directory",
+		}, {
+			name: "include file with file attr and inline",
+			policy: `- !include inc.yaml
+  file: inc.yaml
+`,
+			expectedErr: "yaml: line 2: mapping values are not allowed in this context",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Unmarshal
+			var policy PolicyStatements
+			err := yaml.Unmarshal([]byte(tc.policy), &policy)
+			if len(tc.expectedErr) > 0 {
+				assert.EqualError(t, err, tc.expectedErr)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tc.expected, policy)
+		})
+	}
+}
+
+func TestEmptyPolicyStatementsMarshal(t *testing.T) {
+	t.Run("empty policy statements", func(t *testing.T) {
+		// Marshal
+		actual, err := yaml.Marshal(PolicyStatements{})
+		assert.NoError(t, err)
+		assert.Equal(t, "\n", string(actual))
+	})
+}
+
+func BenchmarkResourceMarshal(b *testing.B) {
+	policy := PolicyStatements{
+		Policy{
+			Id:    "dev",
+			Owner: UserRef("admin"),
+			Annotations: Annotations{
+				"foo": "bar",
+			},
+			Body: PolicyStatements{
+				Group{
+					Id:    "bar",
+					Owner: UserRef("foo"),
+				},
+				User{
+					Id:    "foo",
+					Owner: UserRef("admin"),
+				},
+			},
+		},
+		Policy{
+			Owner: UserRef("admin"),
+			Id:    "pcf/prod",
+			Body: PolicyStatements{
+				Group{
+					Id:    "bar",
+					Owner: UserRef("foo"),
+				},
+				User{
+					Id:    "foo",
+					Owner: UserRef("admin"),
+				},
+			},
+		},
+	}
+	for i := 0; i < b.N; i++ {
+		_, _ = yaml.Marshal(policy)
+	}
+}
+
+func BenchmarkResourceUnmarshal(b *testing.B) {
+	var p PolicyStatements
+	policy := []byte(`
+- !policy
+  id: dev
+  owner: !user /admin
+  annotations:
+    foo: bar
+  body:
+    - !policy
+      id: /inner
+      body:
+      - !group
+        id: bar
+        owner: !user foo
+    - !group
+      id: bar
+      owner: !user foo
+    - !user
+      id: foo
+      owner: !user admin
+`)
+	for i := 0; i < b.N; i++ {
+		_ = yaml.Unmarshal(policy, &p)
 	}
 }

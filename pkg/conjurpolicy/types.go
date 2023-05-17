@@ -4,12 +4,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+//go:generate go run github.com/abice/go-enum -t yaml.tmpl
+
+// Type is an enum representing conjur policy types
+// ENUM(policy, variable, user, group, layer, grant, host, delete, permit, deny)
+type Type int
+
 type Resource interface {
 	unused() // to prevent Resource from being used as a type
-}
-
-type Resources interface {
-	Policy | Variable | User | Group | Layer | Grant | Host | Delete | Permit | Deny
 }
 
 type Group struct {
@@ -45,6 +47,7 @@ type Policy struct {
 
 type Layer struct {
 	Resource `yaml:"-"`
+	Id       string `yaml:"id,omitempty"`
 }
 
 type Grant struct {
@@ -82,116 +85,10 @@ type Deny struct {
 
 type PolicyStatements []Resource
 
-func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
-	var statements []Resource
-	for _, node := range value.Content {
-		var statement Resource
-
-		switch node.Tag {
-		case KindPolicy.Tag():
-			var policy Policy
-			if err := node.Decode(&policy); err != nil {
-				return err
-			}
-			statement = policy
-		case KindGroup.Tag():
-			var group Group
-			if err := node.Decode(&group); err != nil {
-				return err
-			}
-			statement = group
-		case KindUser.Tag():
-			var user User
-			if err := node.Decode(&user); err != nil {
-				return err
-			}
-			statement = user
-		case KindVariable.Tag():
-			var variable Variable
-			if err := node.Decode(&variable); err != nil {
-				return err
-			}
-			statement = variable
-		case KindLayer.Tag():
-			var layer Layer
-			statement = layer
-		case KindGrant.Tag():
-			var grant Grant
-			if err := node.Decode(&grant); err != nil {
-				return err
-			}
-			statement = grant
-		case KindHost.Tag():
-			var host Host
-			if len(node.Value) > 0 || len(node.Content) > 0 {
-				if err := node.Decode(&host); err != nil {
-					return err
-				}
-			}
-			statement = host
-		case KindDelete.Tag():
-			var delete Delete
-			if err := node.Decode(&delete); err != nil {
-				return err
-			}
-			statement = delete
-		case KindPermit.Tag():
-			var permit Permit
-			if err := node.Decode(&permit); err != nil {
-				return err
-			}
-			statement = permit
-		case KindDeny.Tag():
-			var deny Deny
-			if err := node.Decode(&deny); err != nil {
-				return err
-			}
-			statement = deny
-		}
-		statements = append(statements, statement)
+func (p PolicyStatements) MarshalYAML() (interface{}, error) {
+	if len(p) == 0 { // empty policy statements should result in empty yaml
+		return &yaml.Node{Kind: yaml.ScalarNode}, nil
 	}
-
-	*s = statements
-
-	return nil
-}
-
-func (p Policy) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(p, KindPolicy)
-}
-
-func (v Variable) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(v, KindVariable)
-}
-
-func (u User) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(u, KindUser)
-}
-
-func (g Group) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(g, KindGroup)
-}
-
-func (l Layer) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(l, KindLayer)
-}
-
-func (g Grant) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(g, KindGrant)
-}
-
-func (h Host) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(h, KindHost)
-}
-
-func (d Delete) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(d, KindDelete)
-}
-
-func (p Permit) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(p, KindPermit)
-}
-
-func (d Deny) MarshalYAML() (interface{}, error) {
-	return MarshalYAMLWithTag(d, KindDeny)
+	type aliasType PolicyStatements
+	return aliasType(p), nil
 }

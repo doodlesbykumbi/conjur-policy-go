@@ -1,0 +1,72 @@
+{{ range $e := .enum.Values -}}
+    {{ $eShort := printf "%.1s" $e.ValueStr }}
+  func ({{ $eShort }} {{ $e.Name }}) MarshalYAML() (interface{}, error) {
+      type alias{{ $e.Name }} {{ $e.Name }}
+      data := alias{{ $e.Name }}({{ $eShort }})
+      node := &yaml.Node{}
+      node.Kind = yaml.MappingNode
+      if err := node.Encode(data); err != nil {
+        return nil, err
+      }
+      // Avoid emitting strings like `- !variable {}` and instead emit `- !variable` by setting Kind to ScalarNode
+      // when the resource struct is empty!
+      if len(node.Content) == 0 {
+        node.Kind = yaml.ScalarNode
+      }
+      node.Tag = {{ $e.PrefixedName }}.Tag()
+      node.Style = yaml.TaggedStyle
+      return node, nil
+    }
+
+{{ end -}}
+
+func toID(node *yaml.Node) *yaml.Node {
+  node.Kind = yaml.MappingNode
+  node.Content = []*yaml.Node{
+    &yaml.Node{
+      Value: "id",
+      Kind:  yaml.ScalarNode,
+    },
+    &yaml.Node{
+      Value: node.Value,
+      Kind:  yaml.ScalarNode,
+    },
+  }
+  return node
+}
+
+func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
+  var statements []Resource
+  for _, node := range value.Content {
+    switch node.Tag {
+        case "!include":
+              s, err := include(node)
+              if err != nil {
+                  return fmt.Errorf("yaml: line %d: %w", node.Line, err)
+              }
+              statements = append(statements, s...)
+    {{ range $e := .enum.Values -}}
+    {{ $eShort := printf "%.1s" $e.ValueStr }}
+        case {{ $e.PrefixedName }}.Tag():
+              var {{ $eShort }} {{ $e.Name }}
+              if len(node.Value) > 0 || len(node.Content) > 0 {
+                if len(node.Content) == 0 && len(node.Value) > 0 {
+                  node = toID(node)
+                }
+                node.KnownFields(true)
+                if err := node.Decode(&{{ $eShort }}); err != nil {
+                  return err
+                }
+              }
+              statements = append(statements, {{ $eShort }})
+    {{ end -}}
+    }
+  }
+  *s = statements
+  return nil
+}
+
+// Tag is a method that returns a YAML tag from entity kind
+func (t Type) Tag() string {
+  return "!" + t.String()
+}

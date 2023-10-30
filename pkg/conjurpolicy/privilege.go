@@ -1,11 +1,7 @@
 package conjurpolicy
 
-//go:generate go run github.com/dmarkham/enumer -type Privilege -trimprefix Privilege -transform lower -yaml -output privilege.gen.go
-type Privilege int
+//go:generate go run github.com/abice/go-enum --marshal
 
-const (
-	PrivilegeRead Privilege = iota
-	PrivilegeExecute
-	PrivilegeUpdate
-	PrivilegeCreate
-)
+// Privilege is an enum representing Conjur type of transactions that are permitted
+// ENUM(read, execute, update, create)
+type Privilege int

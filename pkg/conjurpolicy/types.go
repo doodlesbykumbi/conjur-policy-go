@@ -14,7 +14,7 @@ type Resources interface {
 
 type Group struct {
 	Resource    `yaml:"-"`
-	Id          string      `yaml:"id"`
+	Id          string      `yaml:"id,omitempty"`
 	Annotations Annotations `yaml:"annotations,omitempty"`
 	Owner       ResourceRef `yaml:"owner,omitempty"`
 }

@@ -64,12 +64,14 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
 			policy: PolicyStatements{Policy{
 				Id: "policy-with-annotations",
 				Annotations: Annotations{
-					"description": "this is a test policy",
+					"description":   "this is a test policy",
+					"authn/api-key": true,
 				},
 			}},
 			expected: `- !policy
   id: policy-with-annotations
   annotations:
+    authn/api-key: true
     description: this is a test policy
 `,
 		},
@@ -134,6 +136,26 @@ func TestResourceMarshalUnmarshal(t *testing.T) {
     - !grant
       role: !layer
       member: !layer test-layer
+`,
+		}, {
+			name: "policy-with-group",
+			policy: PolicyStatements{Policy{
+				Id: "policy-with-body",
+				Body: PolicyStatements{
+					Group{},
+					Grant{
+						Role:   GroupRef(""),
+						Member: GroupRef("test-group"),
+					},
+				},
+			}},
+			expected: `- !policy
+  id: policy-with-body
+  body:
+    - !group
+    - !grant
+      role: !group
+      member: !group test-group
 `,
 		},
 	}

@@ -14,33 +14,33 @@ type Resources interface {
 
 type Group struct {
 	Resource    `yaml:"-"`
-	Id          string      `yaml:"id,omitempty"`
-	Annotations Annotations `yaml:"annotations,omitempty"`
-	Owner       ResourceRef `yaml:"owner,omitempty"`
+	Id          string                 `yaml:"id,omitempty"`
+	Annotations map[string]interface{} `yaml:"annotations,omitempty"`
+	Owner       ResourceRef            `yaml:"owner,omitempty"`
 }
 
-type Annotations map[string]string
+type Annotations map[string]interface{}
 
 type Variable struct {
 	Resource    `yaml:"-"`
-	Id          string      `yaml:"id"`
-	Annotations Annotations `yaml:"annotations,omitempty"`
-	Kind        string      `yaml:"kind,omitempty"`
+	Id          string                 `yaml:"id"`
+	Annotations map[string]interface{} `yaml:"annotations,omitempty"`
+	Kind        string                 `yaml:"kind,omitempty"`
 }
 
 type User struct {
 	Resource    `yaml:"-"`
-	Id          string      `yaml:"id"`
-	Owner       ResourceRef `yaml:"owner,omitempty"`
-	Annotations Annotations `yaml:"annotations,omitempty"`
+	Id          string                 `yaml:"id"`
+	Owner       ResourceRef            `yaml:"owner,omitempty"`
+	Annotations map[string]interface{} `yaml:"annotations,omitempty"`
 }
 
 type Policy struct {
 	Resource    `yaml:"-"`
-	Id          string           `yaml:"id"`
-	Annotations Annotations      `yaml:"annotations,omitempty"`
-	Owner       ResourceRef      `yaml:"owner,omitempty"`
-	Body        PolicyStatements `yaml:"body,omitempty"`
+	Id          string                 `yaml:"id"`
+	Annotations map[string]interface{} `yaml:"annotations,omitempty"`
+	Owner       ResourceRef            `yaml:"owner,omitempty"`
+	Body        PolicyStatements       `yaml:"body,omitempty"`
 }
 
 type Layer struct {
@@ -55,10 +55,10 @@ type Grant struct {
 
 type Host struct {
 	Resource    `yaml:"-"`
-	Id          string            `yaml:"id,omitempty"`
-	Owner       ResourceRef       `yaml:"owner,omitempty"`
-	Body        PolicyStatements  `yaml:"body,omitempty"`
-	Annotations map[string]string `yaml:"annotations,omitempty"`
+	Id          string                 `yaml:"id,omitempty"`
+	Owner       ResourceRef            `yaml:"owner,omitempty"`
+	Body        PolicyStatements       `yaml:"body,omitempty"`
+	Annotations map[string]interface{} `yaml:"annotations,omitempty"`
 }
 
 type Delete struct {
@@ -97,7 +97,10 @@ func (s *PolicyStatements) UnmarshalYAML(value *yaml.Node) error {
 		case KindGroup.Tag():
 			var group Group
 			if err := node.Decode(&group); err != nil {
-				return err
+				// In order to allow empty (inherited) IDs for groups we ignore this error
+				// and allow an empty group statement to be used
+				statement = Group{}
+				break
 			}
 			statement = group
 		case KindUser.Tag():

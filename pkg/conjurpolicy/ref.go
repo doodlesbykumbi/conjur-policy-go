@@ -14,6 +14,13 @@ func UserRef(id string) ResourceRef {
 	}
 }
 
+func GroupRef(id string) ResourceRef {
+	return ResourceRef{
+		Id:   id,
+		Kind: KindGroup,
+	}
+}
+
 func LayerRef(id string) ResourceRef {
 	return ResourceRef{
 		Id:   id,
